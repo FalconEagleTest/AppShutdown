@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AppShutdown": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}
