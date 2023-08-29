@@ -4,7 +4,9 @@ Imports System.ComponentModel
 
 
 Public Class Form1
+    Public shutdownTimer As Integer = 0
 
+    Declare Function SetSuspendState Lib "PowrProf" (ByVal Hibernate As Integer, ByVal ForceCritical As Integer, ByVal DisableWakeEvent As Integer) As Integer
 
     Private WithEvents kbHook As New KeyboardHook
     ' This declares what Type the variable joystick1 will be for. The Type is Joystick.
@@ -28,7 +30,7 @@ Public Class Form1
             press_tick = True
         End If
         LblKeybaord.Text = "Keyboard: " + Key.ToString()
-
+        shutdownTimer = 0
     End Sub
 
     ' This is an event that belongs to the Form. It is raised when the form loads.
@@ -39,24 +41,45 @@ Public Class Form1
     Private Sub joystick1_Down() Handles joystick1.Down
         ' TODO: Replace this so that it plays a sound instead.
         LblController.Text = "Controller: " + "Down"
-
+        shutdownTimer = 0
     End Sub
 
     Private Sub joystick1_Left() Handles joystick1.Left
         ' TODO: Replace this so that it plays a sound instead.
         LblController.Text = "Controller: " + "Left"
-
+        shutdownTimer = 0
     End Sub
 
     Private Sub joystick1_Right() Handles joystick1.Right
         ' TODO: Replace this so that it plays a sound instead.
         LblController.Text = "Controller: " + "Right"
-
+        shutdownTimer = 0
     End Sub
 
     Private Sub joystick1_Up() Handles joystick1.Up
         ' TODO: Replace this so that it plays a sound instead.
         LblController.Text = "Controller: " + "Up"
+        shutdownTimer = 0
+    End Sub
+    Public Sub sleep_now()
+        Dim cmdProcess As Process = New Process
+        Dim fileArgs As String
+        Dim path As String = Environment.SystemDirectory
+
+        fileArgs = "powrprof.dll,SetSuspendState Sleep"
+        cmdProcess.StartInfo.Arguments = fileArgs
+        cmdProcess.StartInfo.WorkingDirectory = path
+        cmdProcess.StartInfo.FileName = "RunDll32.exe"
+        cmdProcess.Start()
+        cmdProcess.WaitForExit()
+
+
+    End Sub
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        sleep_now()
+    End Sub
+
+    Private Sub TextBox1_TextChanged(sender As Object, e As EventArgs) Handles TextBox1.TextChanged
 
     End Sub
     '    Private Sub joystick1_buttonPressed() Handles joystick1.buttonPressed
@@ -76,6 +99,8 @@ Public Class Form1
     End Sub
 
     Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
         If loc <> Cursor.Position Then
             If hidden Then
                 Cursor.Show()
@@ -84,18 +109,53 @@ Public Class Form1
             loc = Cursor.Position
             idle = Date.Now
             LblMouse.Text = "Mouse: " + loc.ToString()
+            shutdownTimer = 0
         ElseIf Not hidden AndAlso (Date.Now - idle).TotalSeconds > 3 Then
 
             Cursor.Hide()
             hidden = True
 
         End If
-        ' LblController.Text = "Controller: " + joystick1.btnValue.ToString()
+        shutdownTimer += 1
+        If (shutdownTimer > (TextBox1.Text * 60)) Then
+            sleep_now()
+
+        End If
+        LblEnterSleep.Text = "Enter Sleep In:" + Convert.ToString((TextBox1.Text * 60) - shutdownTimer) + " Sec"
+        LblController.Text = "Controller: " + joystick1.btnValue.ToString()
 
 
     End Sub
 
+    Private Sub TextBox1_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox1.KeyPress
+        If Asc(e.KeyChar) <> 8 Then
+            If Asc(e.KeyChar) < 48 Or Asc(e.KeyChar) > 57 Then
+                e.Handled = True
+            End If
+        End If
+    End Sub
 
+    Private Sub Form1_Resize(sender As Object, e As EventArgs) Handles Me.Resize
+        If Me.WindowState = FormWindowState.Minimized Then
+            NotifyIcon1.Visible = True
+            NotifyIcon1.Icon = Me.Icon
+            NotifyIcon1.BalloonTipIcon = ToolTipIcon.Info
+
+
+            'Me.Hide()
+            ShowInTaskbar = False
+        End If
+    End Sub
+
+    Private Sub NotifyIcon1_DoubleClick(sender As Object, e As EventArgs) Handles NotifyIcon1.DoubleClick
+
+    End Sub
+
+    Private Sub NotifyIcon1_MouseClick(sender As Object, e As MouseEventArgs) Handles NotifyIcon1.MouseClick
+        Me.Show()
+        Me.WindowState = FormWindowState.Normal
+        NotifyIcon1.Visible = False
+    End Sub
 End Class
 Public Class KeyboardHook
 
