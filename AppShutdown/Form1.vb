@@ -5,7 +5,7 @@ Imports System.ComponentModel
 
 Public Class Form1
     Public shutdownTimer As Integer = 0
-
+    Public first_load As Boolean = True
     Declare Function SetSuspendState Lib "PowrProf" (ByVal Hibernate As Integer, ByVal ForceCritical As Integer, ByVal DisableWakeEvent As Integer) As Integer
 
     Private WithEvents kbHook As New KeyboardHook
@@ -80,7 +80,12 @@ Public Class Form1
     End Sub
 
     Private Sub TextBox1_TextChanged(sender As Object, e As EventArgs) Handles TextBox1.TextChanged
+        If Not first_load Then
+            My.Settings.Time_value = TextBox1.Text
+            My.Settings.Save()
 
+        End If
+        first_load = False
     End Sub
     '    Private Sub joystick1_buttonPressed() Handles joystick1.buttonPressed
     'TODO:   Replace this so that it plays a sound instead.
@@ -92,6 +97,8 @@ Public Class Form1
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
+
+        TextBox1.Text = My.Settings.Time_value
 
         joystick1 = New Joystick(Me, 0)
 
@@ -131,8 +138,11 @@ Public Class Form1
         If Asc(e.KeyChar) <> 8 Then
             If Asc(e.KeyChar) < 48 Or Asc(e.KeyChar) > 57 Then
                 e.Handled = True
+
+
             End If
         End If
+
     End Sub
 
     Private Sub Form1_Resize(sender As Object, e As EventArgs) Handles Me.Resize
@@ -142,7 +152,7 @@ Public Class Form1
             NotifyIcon1.BalloonTipIcon = ToolTipIcon.Info
 
 
-            'Me.Hide()
+            Me.Hide()
             ShowInTaskbar = False
         End If
     End Sub
@@ -153,8 +163,10 @@ Public Class Form1
 
     Private Sub NotifyIcon1_MouseClick(sender As Object, e As MouseEventArgs) Handles NotifyIcon1.MouseClick
         Me.Show()
+        Me.TopMost = True
         Me.WindowState = FormWindowState.Normal
         NotifyIcon1.Visible = False
+        Me.TopMost = False
     End Sub
 End Class
 Public Class KeyboardHook
